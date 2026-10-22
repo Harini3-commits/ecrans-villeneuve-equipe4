@@ -9,6 +9,7 @@ import com.ecrans.vente.application.port.out.Seances;
 import com.ecrans.vente.domaine.commande.Commande;
 import com.ecrans.vente.domaine.commande.StatutCommande;
 import com.ecrans.vente.domaine.commun.CommandeId;
+import com.ecrans.vente.domaine.evenement.EvenementVente;
 import com.ecrans.vente.domaine.seance.PlacesIndisponibles;
 import com.ecrans.vente.domaine.seance.Seance;
 
@@ -37,9 +38,32 @@ public class ConfirmerPaiementService implements ConfirmerPaiement {
 
     @Override
     public void executer(CommandeId id) {
-        // TODO étape 4
-        // INDICE : même schéma qu'au TP3 (charger, faire décider le domaine, enregistrer, publier).
-        // INDICE : ici, la commande est payée ET ses places sont vendues.
-        throw new UnsupportedOperationException("À compléter : étape 4");
+        Commande commande = commandes.parId(id).orElseThrow(() -> new CommandeInconnue(id));
+        if (commande.statut() == StatutCommande.PAYEE || commande.statut() == StatutCommande.A_REMBOURSER) {
+            return;
+        }
+
+        Seance seance = seances.parId(commande.seance())
+                .orElseThrow(() -> new SeanceInconnue(commande.seance()));
+        LocalDateTime maintenant = LocalDateTime.now(horloge);
+        boolean paiementTardif = commande.statut() == StatutCommande.EXPIREE;
+        commande.payer(maintenant);
+        try {
+            seance.vendre(commande.id(), commande.places(), maintenant);
+        } catch (PlacesIndisponibles conflit) {
+            if (!paiementTardif) throw conflit;
+
+            commande.retirerEvenements();
+            commande.aRembourser(maintenant);
+            commandes.enregistrer(commande);
+            commande.retirerEvenements().forEach(publicateur::publier);
+            return;
+        }
+
+        seances.enregistrer(seance);
+        commandes.enregistrer(commande);
+        for (EvenementVente evenement : commande.retirerEvenements()) {
+            publicateur.publier(evenement);
+        }
     }
 }

@@ -50,9 +50,15 @@ public class Commande {
      * @throws PlaceEnDouble si une place apparaît deux fois
      */
     public static Commande creer(CommandeId id, SeanceId seance, List<Billet> billets, LocalDateTime expireA) {
-        // TODO étape 2
-        // INDICE : trois vérifications, puis new Commande(..., StatutCommande.EN_ATTENTE_PAIEMENT).
-        throw new UnsupportedOperationException("À compléter : étape 2");
+        Objects.requireNonNull(billets);
+        if (billets.isEmpty()) throw new CommandeVide();
+        if (billets.size() > MAX_PLACES) throw new TropDePlaces(billets.size());
+
+        Set<PlaceId> places = new HashSet<>();
+        for (Billet billet : billets) {
+            if (!places.add(billet.place())) throw new PlaceEnDouble(billet.place());
+        }
+        return new Commande(id, seance, billets, expireA, StatutCommande.EN_ATTENTE_PAIEMENT);
     }
 
     /** Pour les adapters de persistance uniquement. */
@@ -63,8 +69,9 @@ public class Commande {
 
     /** B6 : la somme des prix figés dans les billets. */
     public Montant total() {
-        // TODO étape 2
-        throw new UnsupportedOperationException("À compléter : étape 2");
+        return billets.stream()
+                .map(billet -> billet.tarif().prix())
+                .reduce(Montant.ZERO, Montant::plus);
     }
 
     /**
@@ -74,9 +81,11 @@ public class Commande {
      * @throws TransitionInterdite depuis tout autre statut
      */
     public void payer(LocalDateTime maintenant) {
-        // TODO étape 2
-        // INDICE : changez le statut, puis evenements.add(new CommandePayee(...)).
-        throw new UnsupportedOperationException("À compléter : étape 2");
+        if (statut != StatutCommande.EN_ATTENTE_PAIEMENT && statut != StatutCommande.EXPIREE) {
+            throw new TransitionInterdite(id, statut, "payer");
+        }
+        statut = StatutCommande.PAYEE;
+        evenements.add(new CommandePayee(id, seance, places(), total(), maintenant));
     }
 
     /**
@@ -85,14 +94,20 @@ public class Commande {
      * @throws TransitionInterdite si la commande n'est pas EN_ATTENTE_PAIEMENT
      */
     public void expirer(LocalDateTime maintenant) {
-        // TODO étape 2
-        throw new UnsupportedOperationException("À compléter : étape 2");
+        if (statut != StatutCommande.EN_ATTENTE_PAIEMENT) {
+            throw new TransitionInterdite(id, statut, "expirer");
+        }
+        statut = StatutCommande.EXPIREE;
+        evenements.add(new CommandeExpiree(id, seance, maintenant));
     }
 
     /** Bonus B13 : payée trop tard et places reprises. */
     public void aRembourser(LocalDateTime maintenant) {
-        // TODO bonus
-        throw new UnsupportedOperationException("À compléter : bonus");
+        if (statut != StatutCommande.PAYEE) {
+            throw new TransitionInterdite(id, statut, "marquer à rembourser");
+        }
+        statut = StatutCommande.A_REMBOURSER;
+        evenements.add(new PaiementARembourser(id, total(), maintenant));
     }
 
     /** Les événements enregistrés depuis le chargement ; l'application les publie après l'enregistrement. */
