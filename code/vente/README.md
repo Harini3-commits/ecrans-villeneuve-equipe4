@@ -6,6 +6,8 @@ Spring Boot arrive après le J4, à l'étape 7 (voir le sujet).
 
 ## Lancer les tests
 
+Le projet nécessite un JDK **25 (LTS)**.
+
 Dans IntelliJ :
 
 - **tout** : fenêtre **Maven → vente → Lifecycle → test** ;
