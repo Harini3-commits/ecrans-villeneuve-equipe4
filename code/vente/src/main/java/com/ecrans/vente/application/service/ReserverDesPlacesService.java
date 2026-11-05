@@ -1,5 +1,6 @@
 package com.ecrans.vente.application.service;
 
+
 import com.ecrans.vente.adapter.out.tarification.GrilleTarifaireFixe;
 import com.ecrans.vente.application.exception.SeanceInconnue;
 import com.ecrans.vente.application.port.in.DemandeBillet;
@@ -17,11 +18,14 @@ import com.ecrans.vente.domaine.commun.CommandeId;
 import com.ecrans.vente.domaine.commun.PlaceId;
 import com.ecrans.vente.domaine.seance.Seance;
 
+
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 
 /**
  * Orchestration seulement : charger, faire décider le domaine, enregistrer, puis appeler le PSP.
@@ -31,14 +35,17 @@ import java.util.stream.Collectors;
  */
 public class ReserverDesPlacesService implements ReserverDesPlaces {
 
+
     /** Bonus : nombre d'essais quand une autre vente a modifié la séance en même temps. */
     static final int ESSAIS_MAX = 3;
+
 
     private final Seances seances;
     private final Commandes commandes;
     private final GrilleTarifaireFixe grille;
     private final Paiements paiements;
     private final Clock horloge;
+
 
     public ReserverDesPlacesService(Seances seances, Commandes commandes, GrilleTarifaireFixe grille,
                                     Paiements paiements, Clock horloge) {
@@ -49,11 +56,38 @@ public class ReserverDesPlacesService implements ReserverDesPlaces {
         this.horloge = horloge;
     }
 
+
     @Override
     public Reservation executer(DemandeReservation demande) {
-        // TODO étape 3
-        // INDICE : même schéma qu'au TP3. Le prix de chaque billet vient de la grille (B6),
-        // INDICE : et PayVia n'est appelé qu'une fois tout enregistré.
-        throw new UnsupportedOperationException("À compléter : étape 3");
+        LocalDateTime maintenant = LocalDateTime.now(horloge);
+        CommandeId commandeId = CommandeId.nouvelle();
+
+        List<Billet> billets = demande.billets().stream()
+                .map(demandeBillet -> new Billet(
+                        demandeBillet.place(),
+                        new Tarif(
+                                demandeBillet.categorie(),
+                                grille.prix(demande.seance(), demandeBillet.categorie())
+                        )
+                ))
+                .collect(Collectors.toList());
+
+        Seance seance = seances.parId(demande.seance())
+                .orElseThrow(() -> new SeanceInconnue(demande.seance()));
+
+        Set<PlaceId> placesDemandees = demande.billets().stream()
+                .map(DemandeBillet::place)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        LocalDateTime payerAvant = seance.bloquer(placesDemandees, commandeId, maintenant);
+
+        Commande commande = Commande.creer(commandeId, demande.seance(), billets, payerAvant);
+
+        seances.enregistrer(seance);
+        commandes.enregistrer(commande);
+
+        String urlPaiement = paiements.demanderPaiement(commandeId, commande.total());
+
+        return new Reservation(commandeId, commande.total(), urlPaiement, payerAvant);
     }
 }

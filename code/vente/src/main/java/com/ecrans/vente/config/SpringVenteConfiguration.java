@@ -89,7 +89,7 @@ public class SpringVenteConfiguration {
     ApplicationRunner seanceDeDemonstration(SeancesEnMemoire seances) {
         return args -> {
             List<PlaceId> plan = new ArrayList<>();
-            for (char rang : new char[]{'F', 'G'}) {
+            for (char rang = 'A'; rang <= 'G'; rang++) {
                 for (int numero = 1; numero <= 10; numero++) {
                     plan.add(new PlaceId(rang, numero));
                 }

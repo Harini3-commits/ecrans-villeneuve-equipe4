@@ -1,5 +1,6 @@
 package com.ecrans.vente.domaine.commande;
 
+
 import com.ecrans.vente.domaine.commun.CommandeId;
 import com.ecrans.vente.domaine.commun.Montant;
 import com.ecrans.vente.domaine.commun.PlaceId;
@@ -9,6 +10,7 @@ import com.ecrans.vente.domaine.evenement.CommandePayee;
 import com.ecrans.vente.domaine.evenement.EvenementVente;
 import com.ecrans.vente.domaine.evenement.PaiementARembourser;
 
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+
 
 /**
  * Agrégat « Commande » : 1 à 10 billets d'une même séance, payés en une fois.
@@ -25,7 +28,9 @@ import java.util.TreeSet;
  */
 public class Commande {
 
+
     public static final int MAX_PLACES = 10;
+
 
     private final CommandeId id;
     private final SeanceId seance;
@@ -34,6 +39,7 @@ public class Commande {
     private StatutCommande statut;
     private final List<EvenementVente> evenements = new ArrayList<>();
 
+
     private Commande(CommandeId id, SeanceId seance, List<Billet> billets, LocalDateTime expireA, StatutCommande statut) {
         this.id = Objects.requireNonNull(id);
         this.seance = Objects.requireNonNull(seance);
@@ -41,6 +47,7 @@ public class Commande {
         this.expireA = Objects.requireNonNull(expireA);
         this.statut = Objects.requireNonNull(statut);
     }
+
 
     /**
      * Crée une commande en attente de paiement.
@@ -61,11 +68,13 @@ public class Commande {
         return new Commande(id, seance, billets, expireA, StatutCommande.EN_ATTENTE_PAIEMENT);
     }
 
+
     /** Pour les adapters de persistance uniquement. */
     public static Commande reconstituer(CommandeId id, SeanceId seance, List<Billet> billets, LocalDateTime expireA,
                                        StatutCommande statut) {
         return new Commande(id, seance, billets, expireA, statut);
     }
+
 
     /** B6 : la somme des prix figés dans les billets. */
     public Montant total() {
@@ -73,6 +82,7 @@ public class Commande {
                 .map(billet -> billet.tarif().prix())
                 .reduce(Montant.ZERO, Montant::plus);
     }
+
 
     /**
      * Le paiement est confirmé : la commande devient PAYEE et enregistre l'événement {@link CommandePayee}.
@@ -88,6 +98,7 @@ public class Commande {
         evenements.add(new CommandePayee(id, seance, places(), total(), maintenant));
     }
 
+
     /**
      * Personne n'a payé à temps : la commande devient EXPIREE et enregistre {@link CommandeExpiree}.
      *
@@ -101,6 +112,7 @@ public class Commande {
         evenements.add(new CommandeExpiree(id, seance, maintenant));
     }
 
+
     /** Bonus B13 : payée trop tard et places reprises. */
     public void aRembourser(LocalDateTime maintenant) {
         if (statut != StatutCommande.PAYEE) {
@@ -110,6 +122,7 @@ public class Commande {
         evenements.add(new PaiementARembourser(id, total(), maintenant));
     }
 
+
     /** Les événements enregistrés depuis le chargement ; l'application les publie après l'enregistrement. */
     public List<EvenementVente> retirerEvenements() {
         List<EvenementVente> copie = List.copyOf(evenements);
@@ -117,11 +130,13 @@ public class Commande {
         return copie;
     }
 
+
     public Set<PlaceId> places() {
         Set<PlaceId> places = new TreeSet<>();
         billets.forEach(b -> places.add(b.place()));
         return places;
     }
+
 
     public CommandeId id() { return id; }
     public SeanceId seance() { return seance; }

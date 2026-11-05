@@ -1,5 +1,6 @@
 package com.ecrans.vente.application.service;
 
+
 import com.ecrans.vente.application.exception.CommandeInconnue;
 import com.ecrans.vente.application.exception.SeanceInconnue;
 import com.ecrans.vente.application.port.in.ConfirmerPaiement;
@@ -13,8 +14,10 @@ import com.ecrans.vente.domaine.evenement.EvenementVente;
 import com.ecrans.vente.domaine.seance.PlacesIndisponibles;
 import com.ecrans.vente.domaine.seance.Seance;
 
+
 import java.time.Clock;
 import java.time.LocalDateTime;
+
 
 /**
  * Le paiement est confirmé : la commande est payée ET ses places sont vendues, dans la même transaction.
@@ -23,10 +26,12 @@ import java.time.LocalDateTime;
  */
 public class ConfirmerPaiementService implements ConfirmerPaiement {
 
+
     private final Seances seances;
     private final Commandes commandes;
     private final PublicateurEvenements publicateur;
     private final Clock horloge;
+
 
     public ConfirmerPaiementService(Seances seances, Commandes commandes, PublicateurEvenements publicateur,
                                     Clock horloge) {
@@ -35,6 +40,7 @@ public class ConfirmerPaiementService implements ConfirmerPaiement {
         this.publicateur = publicateur;
         this.horloge = horloge;
     }
+
 
     @Override
     public void executer(CommandeId id) {
