@@ -57,22 +57,14 @@ public class Commande {
      * @throws PlaceEnDouble si une place apparaît deux fois
      */
     public static Commande creer(CommandeId id, SeanceId seance, List<Billet> billets, LocalDateTime expireA) {
-        if (billets.isEmpty()) {
-            throw new CommandeVide();
-        }
+        Objects.requireNonNull(billets);
+        if (billets.isEmpty()) throw new CommandeVide();
+        if (billets.size() > MAX_PLACES) throw new TropDePlaces(billets.size());
 
-        if (billets.size() > MAX_PLACES) {
-            throw new TropDePlaces(billets.size());
-        }
-
-        Set<PlaceId> placesDejaVues = new HashSet<>();
-
+        Set<PlaceId> places = new HashSet<>();
         for (Billet billet : billets) {
-            if (!placesDejaVues.add(billet.place())) {
-                throw new PlaceEnDouble(billet.place());
-            }
+            if (!places.add(billet.place())) throw new PlaceEnDouble(billet.place());
         }
-
         return new Commande(id, seance, billets, expireA, StatutCommande.EN_ATTENTE_PAIEMENT);
     }
 
@@ -86,13 +78,9 @@ public class Commande {
 
     /** B6 : la somme des prix figés dans les billets. */
     public Montant total() {
-        Montant total = Montant.ZERO;
-
-        for (Billet billet : billets) {
-            total = total.plus(billet.tarif().prix());
-        }
-
-        return total;
+        return billets.stream()
+                .map(billet -> billet.tarif().prix())
+                .reduce(Montant.ZERO, Montant::plus);
     }
 
 
@@ -106,9 +94,7 @@ public class Commande {
         if (statut != StatutCommande.EN_ATTENTE_PAIEMENT && statut != StatutCommande.EXPIREE) {
             throw new TransitionInterdite(id, statut, "payer");
         }
-
         statut = StatutCommande.PAYEE;
-
         evenements.add(new CommandePayee(id, seance, places(), total(), maintenant));
     }
 
@@ -120,19 +106,20 @@ public class Commande {
      */
     public void expirer(LocalDateTime maintenant) {
         if (statut != StatutCommande.EN_ATTENTE_PAIEMENT) {
-            throw new TransitionInterdite(id, statut, "faire expirer");
+            throw new TransitionInterdite(id, statut, "expirer");
         }
-
         statut = StatutCommande.EXPIREE;
-
         evenements.add(new CommandeExpiree(id, seance, maintenant));
     }
 
 
     /** Bonus B13 : payée trop tard et places reprises. */
     public void aRembourser(LocalDateTime maintenant) {
-        // TODO bonus
-        throw new UnsupportedOperationException("À compléter : bonus");
+        if (statut != StatutCommande.PAYEE) {
+            throw new TransitionInterdite(id, statut, "marquer à rembourser");
+        }
+        statut = StatutCommande.A_REMBOURSER;
+        evenements.add(new PaiementARembourser(id, total(), maintenant));
     }
 
 
