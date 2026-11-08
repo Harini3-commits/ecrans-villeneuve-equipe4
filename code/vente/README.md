@@ -27,12 +27,24 @@ Cherchez `TODO` dans le code : chaque méthode à écrire contient des **indices
 | 5 | `application/service/ExpirerBlocagesService` | `etape5/ExpirerBlocagesTest` | B2 |
 | 6 | trouver et corriger la dépendance dans le mauvais sens cachée dans le code fourni (voir ci-dessous) | tous, toujours verts | |
 | ✔ | rien : tout est branché par `config/ApplicationVente` | `ScenarioSoireeDuJeudiTest` | |
-| 7 | après le J4 : brancher Spring Boot (pom, contrôleurs REST, webhook, planificateur) — section « Étape 7 » du sujet | `etape7/ApiVenteTest` (dans `fournis/`) | |
+| 7 | Spring Boot, contrôleurs REST, webhook, planificateur d'expiration et gestion des erreurs | `etape7/ApiVenteTest` (dans `fournis/`) | |
 | 8 | après le J4 : les ventes partenaires SortiesFlash (cas d'usage + ACL) — section « Étape 8 » du sujet | `etape8/VentePartenaireApiTest` (dans `fournis/`) | B11 |
 | bonus | après l'étape 7 : une page web, la consultation du plan de salle, une base H2, l'annulation d'une séance (section 9 du sujet) | | |
 
 **Organisation** : les étapes 1 et 2 sont indépendantes. À trois, l'étape 1 (la plus longue) en binôme et l'étape 2 seul·e, en parallèle ; à deux, une étape chacun.
 Ensuite, répartissez-vous les services (étapes 3, 4 et 5), puis faites l'étape 6 ensemble.
+
+## Démarrer l'API Spring Boot
+
+Après l'étape 7, depuis ce dossier :
+
+```sh
+mvn spring-boot:run
+```
+
+La séance de démonstration `S42` est initialisée au démarrage. L'API de réservation est
+`POST /seances/{seance}/reservations`, le webhook de paiement est `POST /webhooks/payvia`
+et Swagger UI est disponible sur `/swagger-ui.html`.
 
 ## Étape 6 : vérifier l'architecture à la main
 
