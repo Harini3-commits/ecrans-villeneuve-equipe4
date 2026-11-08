@@ -8,9 +8,9 @@ Projet final du module **Concevoir une application numérique** (B3).
 
 | Membre | Étapes codées pendant le TP | Sections du DAT dont il ou elle est référent·e | Partie présentée à l'oral |
 |---|---|---|---|
-| Prénom Nom | … | … | … |
-| Prénom Nom | … | … | … |
-| Prénom Nom (si vous êtes trois) | … | … | … |
+| Prénom Nom | Harini Chandracoumar
+| Prénom Nom | Chris Aurel
+| Prénom Nom (si vous êtes trois) | Kalvin
 
 ## Organisation du dépôt
 
@@ -51,3 +51,17 @@ ecrans-villeneuve/
 - [ ] **Avant le J5** : étapes 7 et 8 faites (Spring Boot, ventes partenaires ; `ApiVenteTest` et `VentePartenaireApiTest` verts, Swagger répond), séquence terminée, DAT rédigé, composants mis à jour
 - [ ] **J5, finalisation** : dernières retouches, DAT exporté en PDF dans `docs/`, version taguée `v1.0` et poussée
 - [ ] **Rendu sur Moodle** avant les passages : le lien de ce dépôt (tag `v1.0` poussé, DAT en PDF dans `docs/`)
+
+## Lancer les tests
+
+cd code/vente
+mvn clean test
+
+## Lancer l’application
+
+cd code/vente
+mvn spring-boot:run
+
+## Ouvrir Swagger
+
+http://127.0.0.1:8080/swagger-ui.html
